@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Releases & Downloads Hub</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.15);
+            border-radius: 9999px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-full flex flex-col transition-colors duration-200">
+
+    <!-- Header -->
+    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 p-2.5 rounded-xl flex items-center justify-center shadow-md">
+                    <i class="fa-brands fa-github text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-tight">GitHub Release Hub</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Directly download assets from the latest releases</p>
+                </div>
+            </div>
+
+            <!-- Controls / Dark Mode toggle & Status -->
+            <div class="flex items-center space-x-3">
+                <button id="openBulkModalBtn" onclick="openBulkDownloadModal()" class="hidden px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg text-xs shadow-sm transition-all flex items-center space-x-2">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>Bulk Download</span>
+                </button>
+                <button id="themeToggleBtn" onclick="toggleDarkMode()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors" title="Toggle Theme">
+                    <i id="themeIcon" class="fa-solid fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
+
+        <!-- Search & Config Card -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <form id="searchForm" onsubmit="handleSearch(event)" class="flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div class="w-full md:w-auto flex-grow max-w-xl">
+                    <label for="usernameInput" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">GitHub Username / Organization</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-user"></i>
+                        </span>
+                        <input type="text" id="usernameInput" value="octocat" required
+                            class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 placeholder-slate-400 text-sm font-medium transition-all"
+                            placeholder="e.g. torvalds, octocat, microsoft">
+                    </div>
+                </div>
+
+                <div class="w-full md:w-auto flex items-end gap-3 self-end">
+                    <div class="w-1/2 md:w-36">
+                        <label for="releaseCountSelect" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Releases per repo</label>
+                        <select id="releaseCountSelect" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-sm font-medium">
+                            <option value="1" selected>Latest only</option>
+                            <option value="3">Latest 3</option>
+                            <option value="5">Latest 5</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-1/2 md:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center space-x-2 text-sm">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <span>Fetch Releases</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Filter & Profile Summary Bar -->
+        <div id="profileSummaryBar" class="hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div class="flex items-center space-x-3">
+                <img id="profileAvatar" src="https://placehold.co/60x60/e2e8f0/475569?text=GH" alt="Avatar" class="w-12 h-12 rounded-full border border-slate-200 dark:border-slate-700 object-cover">
+                <div>
+                    <h2 id="profileName" class="font-bold text-base text-slate-900 dark:text-white">GitHub User</h2>
+                    <p id="profileMeta" class="text-xs text-slate-500 dark:text-slate-400">Loading profile details...</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+                <div class="relative flex-grow sm:w-64">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-xs">
+                        <i class="fa-solid fa-filter"></i>
+                    </span>
+                    <input type="text" id="repoFilterInput" oninput="filterRepositories()" placeholder="Filter repositories..."
+                        class="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area / Feed -->
+        <div id="contentArea" class="flex-grow flex flex-col">
+            <!-- Initial State / Empty State -->
+            <div id="welcomeState" class="my-auto py-16 text-center">
+                <div class="w-16 h-16 bg-blue-50 dark:bg-slate-800 text-blue-500 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 shadow-sm">
+                    <i class="fa-solid fa-cloud-arrow-down"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white">Ready to explore releases</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-1">Enter a GitHub username above and click fetch to explore public repositories and download release assets effortlessly.</p>
+                <button onclick="loadDefaultUser()" class="mt-5 px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs font-semibold rounded-xl transition-all inline-flex items-center space-x-2">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span>Load Default (octocat)</span>
+                </button>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="hidden my-auto py-20 text-center">
+                <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent mb-4"></div>
+                <h3 id="loadingText" class="text-base font-semibold text-slate-700 dark:text-slate-300">Fetching repositories and releases...</h3>
+                <p class="text-xs text-slate-400 mt-1">This may take a moment depending on the number of repositories.</p>
+            </div>
+
+            <!-- Repositories List Container -->
+            <div id="repositoriesContainer" class="grid grid-cols-1 gap-6 hidden">
+                <!-- Populated dynamically via JS -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-6 text-center text-xs text-slate-500 dark:text-slate-400">
+        <p>Built with vanilla JS & Tailwind CSS. Powered by GitHub REST API.</p>
+    </footer>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-24 opacity-0 transition-all duration-300 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm font-medium">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-green-400"></i>
+        <span id="toastMessage">Action completed successfully.</span>
+    </div>
+
+    <!-- Bulk Download Modal -->
+    <div id="bulkDownloadModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200 p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden transform scale-95 transition-transform duration-200" id="modalContainer">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-800/80">
+                <div class="flex items-center space-x-2">
+                    <div class="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 p-2 rounded-lg">
+                        <i class="fa-solid fa-list-check"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-slate-900 dark:text-white">Bulk Download Manager</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Select files to download simultaneously</p>
+                    </div>
+                </div>
+                <button onclick="closeBulkDownloadModal()" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body / Checkbox List -->
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-grow space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
+                    <label class="flex items-center space-x-2 cursor-pointer text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        <input type="checkbox" id="selectAllCheckbox" checked onchange="toggleSelectAllFiles(this)" class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                        <span>Select / Deselect All</span>
+                    </label>
+                    <span id="selectedCountBadge" class="text-xs text-slate-500 dark:text-slate-400 font-medium">0 files selected</span>
+                </div>
+                
+                <div id="bulkFilesListContainer" class="space-y-2">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 flex items-center justify-between">
+                <button onclick="closeBulkDownloadModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-medium transition-colors">
+                    Cancel
+                </button>
+                <button onclick="executeBulkDownload()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-medium shadow-md hover:shadow-lg transition-all flex items-center space-x-2">
+                    <i class="fa-solid fa-download"></i>
+                    <span>Download Selected Files</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Global state
+        let currentUsername = 'octocat';
+        let repositoriesData = [];
+
+        // Check user system theme preference on load
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            updateThemeIcon(true);
+        } else {
+            document.documentElement.classList.remove('dark');
+            updateThemeIcon(false);
+        }
+
+        function toggleDarkMode() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
+                updateThemeIcon(false);
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+                updateThemeIcon(true);
+            }
+        }
+
+        function updateThemeIcon(isDark) {
+            const icon = document.getElementById('themeIcon');
+            if (isDark) {
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                icon.className = 'fa-solid fa-moon';
+            }
+        }
+
+        // Auto load default user on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadDefaultUser();
+        });
+
+        function loadDefaultUser() {
+            document.getElementById('usernameInput').value = 'octocat';
+            fetchGitHubData('octocat');
+        }
+
+        function handleSearch(event) {
+            event.preventDefault();
+            const username = document.getElementById('usernameInput').value.trim();
+            if (username) {
+                fetchGitHubData(username);
+            }
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMessage.textContent = message;
+            if (isError) {
+                toastIcon.className = 'fa-solid fa-circle-exclamation text-red-400';
+            } else {
+                toastIcon.className = 'fa-solid fa-circle-check text-green-400';
+            }
+
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 3500);
+        }
+
+        async function fetchGitHubData(username) {
+            currentUsername = username;
+            const releaseCountLimit = parseInt(document.getElementById('releaseCountSelect').value, 10);
+
+            // UI States toggle
+            document.getElementById('welcomeState').classList.add('hidden');
+            document.getElementById('repositoriesContainer').classList.add('hidden');
+            document.getElementById('profileSummaryBar').classList.add('hidden');
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('loadingText').textContent = `Fetching public repositories for @${username}...`;
+
+            try {
+                // 1. Fetch user/org info
+                const userRes = await fetch(`https://api.github.com/users/${username}`);
+                if (!userRes.ok) {
+                    if (userRes.status === 404) throw new Error(`GitHub user "${username}" not found.`);
+                    if (userRes.status === 403) throw new Error(`API rate limit exceeded. Please wait a moment.`);
+                    throw new Error(`Failed to fetch user data (Status: ${userRes.status})`);
+                }
+                const userData = await userRes.json();
+
+                // Update profile summary bar header info
+                document.getElementById('profileAvatar').src = userData.avatar_url || 'https://placehold.co/60x60/e2e8f0/475569?text=GH';
+                document.getElementById('profileName').textContent = userData.name || userData.login;
+                document.getElementById('profileMeta').textContent = `@${userData.login} • ${userData.public_repos || 0} public repos ${userData.company ? '• ' + userData.company : ''}`;
+                document.getElementById('profileSummaryBar').classList.remove('hidden');
+
+                // 2. Fetch user repositories (paginated if needed, taking up to 100 recent repos)
+                document.getElementById('loadingText').textContent = `Fetching repositories list...`;
+                const reposRes = await fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=100`);
+                if (!reposRes.ok) throw new Error(`Failed to load repositories.`);
+                const repos = await reposRes.json();
+
+                if (!Array.isArray(repos) || repos.length === 0) {
+                    throw new Error(`No public repositories found for @${username}.`);
+                }
+
+                // 3. For each repository, fetch releases (concurrently in batches or all together)
+                document.getElementById('loadingText').textContent = `Checking releases across ${repos.length} repositories...`;
+
+                const repoReleasePromises = repos.map(async (repo) => {
+                    try {
+                        const relRes = await fetch(`https://api.github.com/repos/${username}/${repo.name}/releases?per_page=${releaseCountLimit}`);
+                        if (relRes.ok) {
+                            const releases = await relRes.json();
+                            if (Array.isArray(releases) && releases.length > 0) {
+                                return {
+                                    ...repo,
+                                    releases: releases
+                                };
+                            }
+                        }
+                    } catch (e) {
+                        // ignore individual release fetch errors
+                    }
+                    return null;
+                });
+
+                const results = await Promise.all(repoReleasePromises);
+                repositoriesData = results.filter(item => item !== null);
+
+                // Sort repositories by most recently updated or having latest release date
+                repositoriesData.sort((a, b) => new Date(b.pushed_at) - new Date(a.pushed_at));
+
+                renderRepositories(repositoriesData);
+
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('repositoriesContainer').classList.remove('hidden');
+
+                if (repositoriesData.length === 0) {
+                    document.getElementById('openBulkModalBtn').classList.add('hidden');
+                    showToast(`Found repos, but no releases available for @${username}`, true);
+                } else {
+                    document.getElementById('openBulkModalBtn').classList.remove('hidden');
+                    showToast(`Successfully loaded ${repositoriesData.length} repositories with releases!`);
+                }
+
+            } catch (error) {
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('welcomeState').classList.remove('hidden');
+                document.getElementById('openBulkModalBtn').classList.add('hidden');
+                showToast(error.message, true);
+            }
+        }
+
+        function renderRepositories(data) {
+// ... upward changes continued ...
+            data.forEach((repo, idx) => {
+                const repoCard = document.createElement('div');
+                repoCard.className = 'repo-card bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col transition-all hover:shadow-md';
+                repoCard.setAttribute('data-repo-name', repo.name.toLowerCase());
+
+                // Repository Header
+                let html = `
+                    <div class="p-5 border-b border-slate-100 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div class="flex items-start space-x-3">
+                            <div class="mt-1 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 p-2 rounded-xl">
+                                <i class="fa-solid fa-book-bookmark"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center space-x-2 flex-wrap">
+                                    <a href="${repo.html_url}" target="_blank" class="font-bold text-base hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center space-x-1">
+                                        <span>${repo.name}</span>
+                                        <i class="fa-solid fa-arrow-up-right-from-square text-xs opacity-60"></i>
+                                    </a>
+                                    ${repo.stargazers_count > 0 ? `<span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border border-amber-200/50 dark:border-amber-700/50"><i class="fa-solid fa-star text-[10px]"></i><span>${repo.stargazers_count}</span></span>` : ''}
+                                    ${repo.language ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">${repo.language}</span>` : ''}
+                                </div>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">${repo.description || 'No description provided.'}</p>
+                            </div>
+                        </div>
+                        <div class="text-xs text-slate-400 self-end sm:self-center whitespace-nowrap">
+                            Updated ${formatDate(repo.pushed_at)}
+                        </div>
+                    </div>
+                `;
+
+                // Releases Section
+                html += `<div class="p-5 flex flex-col gap-4 divide-y divide-slate-100 dark:divide-slate-700/60">`;
+
+                repo.releases.forEach((release, rIdx) => {
+                    const releaseDate = formatDate(release.published_at);
+                    const isLatest = rIdx === 0;
+
+                    html += `
+                        <div class="${rIdx > 0 ? 'pt-4' : ''} flex flex-col gap-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div class="flex items-center space-x-2 flex-wrap">
+                                    <a href="${release.html_url}" target="_blank" class="font-semibold text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center space-x-1.5">
+                                        <i class="fa-solid fa-tag text-xs text-blue-500"></i>
+                                        <span>${release.name || release.tag_name}</span>
+                                    </a>
+                                    ${isLatest ? '<span class="px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700 rounded-md">Latest</span>' : ''}
+                                    ${release.prerelease ? '<span class="px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider bg-purple-50 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-700 rounded-md">Pre-release</span>' : ''}
+                                </div>
+                                <span class="text-xs text-slate-400">Published ${releaseDate}</span>
+                            </div>
+                    `;
+
+                    // Assets list or source code fallback
+                    if (release.assets && release.assets.length > 0) {
+                        html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-1">`;
+                        release.assets.forEach(asset => {
+                            const fileSize = formatBytes(asset.size);
+                            const fileExt = getFileExtension(asset.name);
+                            const iconClass = getFileIcon(fileExt);
+
+                            html += `
+                                <div class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-900/60 hover:bg-slate-100/80 dark:hover:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-700/60 transition-all group">
+                                    <div class="flex items-center space-x-2.5 overflow-hidden pr-2">
+                                        <div class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-slate-800 text-blue-500 flex items-center justify-center shrink-0">
+                                            <i class="${iconClass} text-sm"></i>
+                                        </div>
+                                        <div class="overflow-hidden">
+                                            <p class="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate" title="${asset.name}">${asset.name}</p>
+                                            <p class="text-[10px] text-slate-400 flex items-center space-x-2">
+                                                <span>${fileSize}</span>
+                                                <span>•</span>
+                                                <span><i class="fa-solid fa-download text-[9px]"></i> ${asset.download_count.toLocaleString()} downloads</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <a href="${asset.browser_download_url}" target="_blank" download
+                                        class="shrink-0 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-all shadow-sm flex items-center justify-center w-8 h-8"
+                                        title="Download Asset">
+                                        <i class="fa-solid fa-download"></i>
+                                    </a>
+                                </div>
+                            `;
+                        });
+                        html += `</div>`;
+                    } else {
+                        // No binary assets, provide source code zips
+                        html += `
+                            <div class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+                                <span class="text-xs text-slate-500 italic">No custom assets attached. Source code available:</span>
+                                <div class="flex items-center space-x-2">
+                                    <a href="${release.zipball_url}" class="px-2.5 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-lg text-xs font-medium transition-colors">
+                                        <i class="fa-solid fa-file-zipper mr-1"></i> Zip
+                                    </a>
+                                    <a href="${release.tarball_url}" class="px-2.5 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-lg text-xs font-medium transition-colors">
+                                        <i class="fa-solid fa-file-code mr-1"></i> Tar.gz
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    html += `</div>`;
+                });
+
+                html += `</div>`;
+                repoCard.innerHTML = html;
+                container.appendChild(repoCard);
+            });
+        }
+
+        // Modal open/close & bulk download functionality
+        function openBulkDownloadModal() {
+            const modal = document.getElementById('bulkDownloadModal');
+            const modalContainer = document.getElementById('modalContainer');
+            const listContainer = document.getElementById('bulkFilesListContainer');
+            listContainer.innerHTML = '';
+
+            let totalFilesCount = 0;
+
+            repositoriesData.forEach(repo => {
+                repo.releases.forEach(release => {
+                    if (release.assets && release.assets.length > 0) {
+                        release.assets.forEach(asset => {
+                            totalFilesCount++;
+                            const div = document.createElement('div');
+                            div.className = 'flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200/60 dark:border-slate-700/60';
+                            div.innerHTML = `
+                                <label class="flex items-center space-x-3 overflow-hidden cursor-pointer flex-grow pr-3">
+                                    <input type="checkbox" checked value="${asset.browser_download_url}" data-filename="${asset.name}" onchange="updateSelectedCount()" class="bulk-file-checkbox w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 shrink-0">
+                                    <div class="overflow-hidden">
+                                        <p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">${repo.name} / <span class="font-normal text-slate-600 dark:text-slate-300">${asset.name}</span></p>
+                                        <p class="text-[10px] text-slate-400">${release.name || release.tag_name} • ${formatBytes(asset.size)}</p>
+                                    </div>
+                                </label>
+                            `;
+                            listContainer.appendChild(div);
+                        });
+                    }
+                });
+            });
+
+            if (totalFilesCount === 0) {
+                listContainer.innerHTML = `
+                    <div class="py-8 text-center text-slate-400 text-xs">
+                        <i class="fa-solid fa-folder-open text-2xl mb-2"></i>
+                        <p>No downloadable release asset files found across current repositories.</p>
+                    </div>
+                `;
+            }
+
+            document.getElementById('selectAllCheckbox').checked = true;
+            updateSelectedCount();
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContainer.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeBulkDownloadModal() {
+            const modal = document.getElementById('bulkDownloadModal');
+            const modalContainer = document.getElementById('modalContainer');
+            modal.classList.add('opacity-0');
+            modalContainer.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        function toggleSelectAllFiles(selectAllCheckbox) {
+            const checkboxes = document.querySelectorAll('.bulk-file-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = selectAllCheckbox.checked;
+            });
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('.bulk-file-checkbox');
+            const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+            document.getElementById('selectedCountBadge').textContent = `${checkedCount} of ${checkboxes.length} files selected`;
+        }
+
+        function executeBulkDownload() {
+            const checkedCheckboxes = document.querySelectorAll('.bulk-file-checkbox:checked');
+            if (checkedCheckboxes.length === 0) {
+                showToast('Please select at least one file to download.', true);
+                return;
+            }
+
+            showToast(`Initiating download for ${checkedCheckboxes.length} files...`);
+
+            // Trigger downloads with a short stagger to prevent browser blocking
+            checkedCheckboxes.forEach((cb, index) => {
+                const url = cb.value;
+                setTimeout(() => {
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', '');
+                    link.target = '_blank';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }, index * 300);
+            });
+
+            closeBulkDownloadModal();
+        }
+
+        function filterRepositories() {
+            const query = document.getElementById('repoFilterInput').value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.repo-card');
+
+            cards.forEach(card => {
+                const repoName = card.getAttribute('data-repo-name');
+                if (repoName.includes(query)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'Unknown date';
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString(undefined, options);
+        }
+
+        function formatBytes(bytes, decimals = 1) {
+            if (!bytes || bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        function getFileExtension(filename) {
+            return filename.slice((filename.lastIndexOf('.') - 1 >>> 0) + 2).toLowerCase();
+        }
+
+        function getFileIcon(ext) {
+            switch(ext) {
+                case 'zip':
+                case 'tar':
+                case 'gz':
+                case 'rar':
+                case '7z':
+                    return 'fa-solid fa-file-zipper';
+                case 'exe':
+                case 'msi':
+                case 'dmg':
+                case 'pkg':
+                case 'AppImage':
+                case 'deb':
+                case 'rpm':
+                    return 'fa-solid fa-box-archive';
+                case 'apk':
+                case 'ipa':
+                    return 'fa-solid fa-mobile-screen';
+                case 'pdf':
+                case 'txt':
+                case 'md':
+                    return 'fa-solid fa-file-lines';
+                case 'json':
+                case 'yml':
+                case 'yaml':
+                case 'xml':
+                    return 'fa-solid fa-file-code';
+                default:
+                    return 'fa-solid fa-file-arrow-down';
+            }
+        }
+    </script>
+</body>
+</html>
